@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a1633">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>С днём рождения, Маша!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800;900&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a1633; --navy2:#13284f; --navy3:#1d3a6e;
+    --green:#0d3527; --green2:#1d5e45; --mint:#7fe0b5;
+    --ice:#e8f6ff; --frost:#9fd3ff; --gold:#ffd479;
+    --card:rgba(255,255,255,.07); --stroke:rgba(255,255,255,.14);
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:var(--navy)}
+  body{
+    font-family:Manrope,system-ui,-apple-system,sans-serif;color:var(--ice);
+    background:linear-gradient(170deg,#081128 0%,var(--navy2) 45%,var(--green) 100%);
+    -webkit-user-select:none;user-select:none;touch-action:manipulation;
+  }
+  .app{position:fixed;inset:0;max-width:460px;margin:0 auto;overflow:hidden}
+  canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #snow{z-index:1} #fx{z-index:50}
+
+  /* горы */
+  .mountains{position:absolute;left:0;right:0;bottom:0;z-index:2;pointer-events:none;transition:transform 1.2s cubic-bezier(.2,.8,.2,1),opacity 1s}
+  .mountains svg{display:block;width:100%;height:auto}
+  .app.scrolled .mountains{transform:translateY(40%);opacity:.35}
+
+  /* экраны */
+  .screen{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+    padding:calc(var(--safe-t) + 24px) 20px calc(var(--safe-b) + 24px);
+    opacity:0;visibility:hidden;transform:translateY(30px) scale(.98);
+    transition:opacity .7s,transform .7s cubic-bezier(.2,.8,.2,1),visibility 0s .7s}
+  .screen.active{opacity:1;visibility:visible;transform:none;transition:opacity .7s,transform .7s cubic-bezier(.2,.8,.2,1)}
+  .scroll > *{flex-shrink:0}
+  .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+
+  .btn{margin:28px auto 0;display:inline-flex;align-items:center;gap:10px;border:0;cursor:pointer;
+    font:800 15px/1 Unbounded,sans-serif;letter-spacing:.02em;color:var(--navy);
+    padding:18px 26px;border-radius:999px;background:linear-gradient(135deg,var(--ice),var(--mint));
+    box-shadow:0 10px 30px rgba(127,224,181,.35),inset 0 -3px 0 rgba(0,0,0,.12);
+    transition:transform .15s}
+  .btn:active{transform:scale(.94)}
+  .pill{display:inline-block;font:700 11px/1 Unbounded,sans-serif;letter-spacing:.18em;text-transform:uppercase;
+    padding:8px 12px;border-radius:999px;background:rgba(127,224,181,.14);color:var(--mint);border:1px solid rgba(127,224,181,.3)}
+
+  /* ---------- 1. ТАП-ЭКРАН ---------- */
+  #s1{align-items:center;justify-content:center;text-align:center;cursor:pointer}
+  .dateRow{position:absolute;top:calc(var(--safe-t) + 70px);left:0;right:0;display:flex;justify-content:center;gap:10px;
+    font:900 30px/1 Unbounded,sans-serif;transition:all 1s cubic-bezier(.2,.8,.2,1)}
+  .dateRow span{opacity:0;transform:translateY(30px) scale(.4);transition:all .6s cubic-bezier(.3,1.6,.5,1);
+    background:linear-gradient(180deg,#fff,var(--frost));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .dateRow span.in{opacity:1;transform:none}
+  .dateRow .dot{color:var(--mint);-webkit-text-fill-color:var(--mint)}
+  .dateRow.center{top:38%;font-size:52px;gap:6px;flex-wrap:wrap}
+  .dateRow.up{top:calc(var(--safe-t) + 40px);font-size:26px;opacity:.85}
+
+  .numWrap{position:relative;height:260px;display:flex;align-items:center;justify-content:center}
+  #bigNum{font:900 150px/1 Unbounded,sans-serif;letter-spacing:-.04em;
+    background:linear-gradient(180deg,#fff 10%,var(--frost) 55%,var(--mint));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 24px rgba(159,211,255,.45));transform:scale(.12);transition:transform .45s cubic-bezier(.3,1.7,.5,1)}
+  #bigNum.long{font-size:96px}
+  #bigNum.pop{animation:pop .5s ease-out forwards}
+  @keyframes pop{0%{}40%{transform:scale(1.25);filter:drop-shadow(0 0 50px #fff)}100%{transform:scale(0);opacity:0}}
+  .numLabel{font:700 12px/1 Unbounded,sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--mint);opacity:.8;margin-top:6px;min-height:14px}
+  .hint{position:absolute;bottom:calc(var(--safe-b) + 250px);left:0;right:0;font-weight:700;font-size:15px;opacity:.85;animation:breathe 2s ease-in-out infinite}
+  @keyframes breathe{50%{opacity:.35}}
+  .dots{display:flex;gap:6px;justify-content:center;margin-top:18px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .3s}
+  .dots i.on{background:var(--mint);box-shadow:0 0 10px var(--mint);transform:scale(1.2)}
+  .ripple{position:absolute;z-index:40;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;border:2px solid var(--frost);pointer-events:none;animation:rip .6s ease-out forwards}
+  @keyframes rip{to{transform:scale(9);opacity:0}}
+
+  .greet{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;
+    padding-top:120px;opacity:0;pointer-events:none;transition:opacity .4s}
+  .greet.show{opacity:1;pointer-events:auto}
+  .greet h1{font:900 38px/1.05 Unbounded,sans-serif;letter-spacing:-.02em}
+  .greet h2{font:800 26px/1.15 Unbounded,sans-serif;margin-top:14px;color:var(--mint)}
+  .greet .ch{display:inline-block;opacity:0;transform:translateY(40px) rotate(-12deg) scale(.5)}
+  .greet.show .ch{animation:chIn .6s cubic-bezier(.3,1.8,.5,1) forwards}
+  @keyframes chIn{to{opacity:1;transform:none}}
+  .age{margin-top:22px;display:flex;align-items:center;gap:14px;opacity:0;transform:scale(.6);transition:all .7s cubic-bezier(.3,1.6,.5,1)}
+  .age.in{opacity:1;transform:none}
+  .age b{font:900 72px/1 Unbounded,sans-serif;color:var(--gold);text-shadow:0 0 30px rgba(255,212,121,.5)}
+  .age span{text-align:left;font-weight:700;font-size:15px;line-height:1.35;opacity:.9}
+  .greet .btn{opacity:0;transform:translateY(20px);transition:all .6s}
+  .greet .btn.in{opacity:1;transform:none}
+
+  /* ---------- 2. ИТОГИ ---------- */
+  #s2{padding-left:16px;padding-right:16px}
+  .head{text-align:center;margin-bottom:20px}
+  .head h2{font:900 30px/1.08 Unbounded,sans-serif;margin-top:14px;letter-spacing:-.01em}
+  .head h2 em{font-style:normal;color:var(--mint)}
+  .head p{opacity:.7;margin-top:8px;font-size:14px}
+
+  .player{position:relative;border-radius:24px;padding:18px;overflow:hidden;
+    background:linear-gradient(135deg,rgba(29,58,110,.85),rgba(13,53,39,.85));border:1px solid var(--stroke);
+    box-shadow:0 20px 50px rgba(0,0,0,.35)}
+  .player::after{content:"";position:absolute;inset:-50%;background:linear-gradient(115deg,transparent 45%,rgba(255,255,255,.12) 50%,transparent 55%);animation:shine 4s infinite}
+  @keyframes shine{0%{transform:translateX(-60%)}60%,100%{transform:translateX(60%)}}
+  .pRow{display:flex;gap:14px;align-items:center}
+  .avatar{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:34px;
+    background:linear-gradient(135deg,var(--frost),var(--mint));box-shadow:0 0 0 3px rgba(255,255,255,.15)}
+  .pName{font:800 20px/1.1 Unbounded,sans-serif}
+  .pClass{font-size:12.5px;opacity:.75;margin-top:5px;line-height:1.35}
+  .lvl{margin-top:16px;display:flex;justify-content:space-between;font:700 11px/1 Unbounded,sans-serif;letter-spacing:.08em;opacity:.85}
+  .bar{height:12px;border-radius:99px;background:rgba(0,0,0,.3);margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--frost),var(--mint),var(--gold));
+    transition:width 2.2s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 14px rgba(127,224,181,.6)}
+  .lvlUp{position:absolute;right:14px;top:14px;font:900 12px/1 Unbounded,sans-serif;color:var(--navy);background:var(--gold);
+    padding:7px 10px;border-radius:8px;transform:scale(0) rotate(-10deg);transition:transform .5s cubic-bezier(.3,1.8,.5,1)}
+  .lvlUp.in{transform:scale(1) rotate(6deg)}
+
+  .secT{font:800 13px/1 Unbounded,sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:30px 4px 12px;opacity:.85;display:flex;align-items:center;gap:8px}
+  .secT::after{content:"";flex:1;height:1px;background:var(--stroke)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{border-radius:20px;padding:16px 14px;background:var(--card);border:1px solid var(--stroke);
+    opacity:0;transform:translateY(24px);transition:all .6s cubic-bezier(.2,.8,.2,1)}
+  .tile.vis{opacity:1;transform:none}
+  .tile.wide{grid-column:span 2}
+  .tile .ic{font-size:22px}
+  .tile .v{font:900 24px/1.1 Unbounded,sans-serif;margin-top:10px;letter-spacing:-.02em;word-break:break-word}
+  .tile.wide .v{font-size:30px}
+  .tile .l{font-size:12.5px;opacity:.7;margin-top:6px;line-height:1.3}
+  .tile.loveT{background:linear-gradient(135deg,rgba(255,143,177,.18),rgba(159,211,255,.06));border-color:rgba(255,143,177,.35)}
+  .tile.accent{background:linear-gradient(135deg,rgba(127,224,181,.18),rgba(159,211,255,.08));border-color:rgba(127,224,181,.35)}
+
+  .skill{margin-bottom:14px;opacity:0;transform:translateX(-20px);transition:all .6s}
+  .skill.vis{opacity:1;transform:none}
+  .skill .t{display:flex;justify-content:space-between;font-weight:700;font-size:14px}
+  .skill .t b{font-family:Unbounded,sans-serif;font-size:13px;color:var(--mint)}
+  .skill .bar{height:10px}
+
+  .ach{display:flex;gap:12px;align-items:center;padding:12px;border-radius:18px;background:var(--card);border:1px solid var(--stroke);margin-bottom:10px;
+    opacity:0;transform:scale(.85);transition:all .5s cubic-bezier(.3,1.6,.5,1)}
+  .ach.vis{opacity:1;transform:none}
+  .ach .ai{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:24px;
+    background:radial-gradient(circle at 30% 30%,rgba(255,212,121,.5),rgba(255,212,121,.08));border:1px solid rgba(255,212,121,.45)}
+  .ach .at{font-weight:800;font-size:15px}
+  .ach .ad{font-size:12.5px;opacity:.7;margin-top:3px;line-height:1.3}
+  .ach .rar{margin-left:auto;flex:none;font:700 9px/1 Unbounded,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:6px 7px;border-radius:6px;color:var(--gold);border:1px solid rgba(255,212,121,.4)}
+  .center{text-align:center}
+
+  /* квесты */
+  .quest{position:relative;padding:14px 14px 14px 52px;border-radius:18px;background:var(--card);border:1px solid var(--stroke);margin-bottom:10px;
+    opacity:0;transform:translateX(30px);transition:all .6s cubic-bezier(.2,.8,.2,1)}
+  .quest.vis{opacity:1;transform:none}
+  .quest .qi{position:absolute;left:12px;top:14px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:16px;background:rgba(255,255,255,.08)}
+  .quest .qt{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-weight:800;font-size:15px}
+  .quest .qs{flex:none;font:700 9px/1 Unbounded,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:6px}
+  .quest.done .qs{color:var(--mint);background:rgba(127,224,181,.14)}
+  .quest.prog .qs{color:var(--frost);background:rgba(159,211,255,.14)}
+  .quest.next .qs{color:var(--gold);background:rgba(255,212,121,.14)}
+  .quest.next{border-style:dashed}
+  .quest .qd{font-size:12.5px;opacity:.72;margin-top:4px;line-height:1.35}
+  .quest .bar{height:8px;margin-top:10px}
+  .quest.love{background:linear-gradient(135deg,rgba(255,143,177,.16),rgba(159,211,255,.08));border-color:rgba(255,143,177,.35)}
+  .quest.love .qs{color:#ffb3c9;background:rgba(255,143,177,.16)}
+
+  /* карта */
+  .mapCard{border-radius:22px;padding:14px;background:linear-gradient(160deg,rgba(29,58,110,.6),rgba(13,53,39,.6));border:1px solid var(--stroke)}
+  .mapTop{display:flex;gap:10px}
+  .mapTop>div{flex:1}
+  .mapTop b{display:block;font:900 26px/1 Unbounded,sans-serif;color:var(--mint)}
+  .mapTop span{display:block;font-size:11.5px;opacity:.7;margin-top:5px;line-height:1.25}
+  #map{display:block;width:100%;height:auto;margin-top:12px;overflow:visible}
+  #map .arc{fill:none;stroke-width:1.4;stroke-linecap:round;transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)}
+  #map .pt{transform-box:fill-box;transform-origin:center;transform:scale(0);transition:transform .5s cubic-bezier(.3,1.8,.5,1)}
+  #map.go .pt{transform:scale(1)}
+  #map text{font:700 8.5px Manrope,sans-serif;fill:var(--ice)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:8px;font-size:11px;opacity:.75}
+  .legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:0}
+  .lg-me{background:#fff}.lg-pt{background:var(--frost)}.lg-we{background:var(--gold)}.lg-fav{background:var(--mint)}.lg-love{background:#ff8fb1}
+  .trip{display:flex;gap:12px;align-items:center;padding:11px 12px;border-radius:16px;background:var(--card);border:1px solid var(--stroke);margin-top:8px;
+    opacity:0;transform:translateY(16px);transition:all .5s cubic-bezier(.2,.8,.2,1)}
+  .trip.vis{opacity:1;transform:none}
+  .trip .te{flex:none;font-size:22px;width:30px;text-align:center}
+  .trip b{display:block;font-size:14.5px;font-weight:800}
+  .trip span{display:block;font-size:12px;opacity:.7;margin-top:2px;line-height:1.3}
+  .trip .tag{margin-left:auto;flex:none;font:700 9px/1 Unbounded,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:5px 7px;border-radius:6px;color:var(--gold);border:1px solid rgba(255,212,121,.4)}
+  .trip .tag.fav{color:var(--mint);border-color:rgba(127,224,181,.4)}
+  .trip .tag.love{color:#ffb3c9;border-color:rgba(255,143,177,.45)}
+  .avatar{position:relative;overflow:hidden}
+  .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .avatar i{position:absolute;right:-2px;bottom:-4px;font-size:20px;font-style:normal;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+  .trip .ph{flex:none;width:54px;height:54px;border-radius:14px;object-fit:cover;border:2px solid rgba(255,255,255,.2)}
+  .quest .qph{display:block;width:100%;height:170px;object-fit:cover;object-position:center 30%;border-radius:12px;margin-top:10px}
+  .album{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:8px 16px 14px;scrollbar-width:none}
+  .album::-webkit-scrollbar{display:none}
+  .pol{flex:none;width:72%;scroll-snap-align:center;background:#f4f1ea;border-radius:6px;padding:8px 8px 0;color:#1b2440;
+    box-shadow:0 12px 30px rgba(0,0,0,.4);transform:rotate(var(--r))}
+  .pol img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:3px;background:#ccd}
+  .pol b{display:block;font:800 13px/1.25 Manrope,sans-serif;padding:9px 2px 2px}
+  .pol span{display:block;font:700 10px/1 Unbounded,sans-serif;letter-spacing:.08em;opacity:.55;padding:2px 2px 11px}
+  .albumHint{text-align:center;font-size:11.5px;opacity:.5}
+  .polar{width:70%;margin:0 auto 16px;background:#f4f1ea;padding:8px 8px 0;border-radius:6px;transform:rotate(-3deg);box-shadow:0 12px 30px rgba(0,0,0,.4)}
+  .polar img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:3px}
+  .polar span{display:block;color:#1b2440;font:700 10px/1 Unbounded,sans-serif;letter-spacing:.06em;padding:10px 0 11px;opacity:.7}
+  .lb{position:fixed;inset:0;z-index:100;background:rgba(5,10,25,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:calc(var(--safe-t) + 20px) 12px calc(var(--safe-b) + 20px);opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
+  .lb.on{opacity:1;visibility:visible;transition:opacity .3s}
+  .lb img{max-width:100%;max-height:78vh;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.92);transition:transform .35s cubic-bezier(.3,1.5,.5,1)}
+  .lb.on img{transform:none}
+  .lbCap{margin-top:14px;font-weight:800;font-size:15px;text-align:center}
+  .lbX{position:absolute;top:calc(var(--safe-t) + 14px);right:18px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);font-size:16px}
+  .ko{font-family:system-ui,-apple-system,sans-serif;font-weight:700;color:var(--frost);margin-top:10px;font-size:18px}
+
+  /* ---------- 3. ПРЕДСКАЗАНИЕ ---------- */
+  #s3{align-items:center;text-align:center}
+  .globeWrap{position:relative;margin:16px auto 0;width:200px;cursor:pointer;flex:none}
+  .globe{position:relative;width:200px;height:200px;border-radius:50%;overflow:hidden;
+    background:radial-gradient(circle at 50% 40%,#2a5590,#13284f 60%,#0a1633);
+    box-shadow:inset 0 0 40px rgba(159,211,255,.35),inset -14px -18px 40px rgba(0,0,0,.4),0 0 60px rgba(159,211,255,.25);border:2px solid rgba(255,255,255,.25)}
+  .globe::before{content:"";position:absolute;left:24px;top:18px;width:50px;height:28px;border-radius:50%;background:rgba(255,255,255,.35);filter:blur(6px);transform:rotate(-30deg);z-index:3}
+  .globe svg{position:absolute;bottom:0;left:0;width:100%}
+  .globe .gs{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;opacity:.9;animation:gfall linear infinite}
+  @keyframes gfall{from{transform:translateY(-20px)}to{transform:translateY(220px)}}
+  .globe.shake .gs{animation-duration:.9s!important}
+  .base{width:150px;height:34px;margin:-12px auto 0;border-radius:10px 10px 18px 18px;background:linear-gradient(180deg,#1d5e45,#0d3527);
+    box-shadow:0 10px 30px rgba(0,0,0,.4);position:relative;z-index:-1;font:800 10px/34px Unbounded,sans-serif;letter-spacing:.2em;color:var(--mint)}
+  .globeWrap.shake{animation:gshake .6s}
+  @keyframes gshake{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(4deg)}}
+  .count{margin-top:16px;font:700 12px/1 Unbounded,sans-serif;letter-spacing:.15em;opacity:.7}
+  .cards{width:100%;margin-top:18px;text-align:left}
+  .pc{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:18px;margin-bottom:10px;
+    background:linear-gradient(135deg,rgba(29,58,110,.7),rgba(13,53,39,.7));border:1px solid var(--stroke);
+    animation:pcIn .7s cubic-bezier(.3,1.5,.5,1) both}
+  @keyframes pcIn{from{opacity:0;transform:translateY(-60px) scale(.6) rotateX(60deg)}}
+  .pc .e{font-size:26px;flex:none;line-height:1}
+  .pc b{display:block;font-weight:800;font-size:15px}
+  .pc span{display:block;font-size:13px;opacity:.75;margin-top:3px;line-height:1.35}
+  .final{display:none;margin-top:10px;padding:26px 18px;border-radius:24px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.03));border:1px solid var(--stroke);animation:pcIn .9s both}
+  .final.show{display:block}
+  .final h3{font:900 28px/1.1 Unbounded,sans-serif}
+  .final h3 em{font-style:normal;color:var(--mint)}
+  .final p{margin-top:12px;font-size:15px;line-height:1.5;opacity:.9}
+  .final .sign{margin-top:14px;font-weight:800;color:var(--frost)}
+  .ghost{background:transparent;color:var(--ice);box-shadow:none;border:1px solid var(--stroke);margin-top:16px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="snow"></canvas>
+
+  <div class="mountains" aria-hidden="true">
+    <svg viewBox="0 0 400 220" preserveAspectRatio="none">
+      <path d="M0 120 L60 60 L95 95 L150 30 L200 100 L250 50 L310 110 L350 70 L400 105 V220 H0Z" fill="#1d3a6e" opacity=".55"/>
+      <path d="M150 30 L132 54 L142 50 L150 58 L158 48 L168 55Z M250 50 L236 68 L246 64 L252 72 L260 63 L266 66Z" fill="#e8f6ff" opacity=".7"/>
+      <path d="M0 160 L50 110 L90 140 L140 85 L195 150 L240 105 L300 160 L345 120 L400 150 V220 H0Z" fill="#13284f"/>
+      <path d="M140 85 L124 104 L136 100 L144 108 L152 98 L160 104Z M345 120 L333 134 L342 131 L349 137 L356 130Z" fill="#e8f6ff" opacity=".85"/>
+      <path d="M0 200 L40 170 L80 190 L130 150 L180 195 L230 165 L280 198 L330 160 L400 195 V220 H0Z" fill="#0d3527"/>
+      <g fill="#0a2a1f">
+        <path d="M30 205 l8 -22 l8 22z M48 208 l6 -16 l6 16z M300 206 l9 -24 l9 24z M322 210 l6 -15 l6 15z M360 208 l7 -18 l7 18z"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 1. ТАП -->
+  <section class="screen active" id="s1">
+    <div class="dateRow" id="dateRow"></div>
+    <div class="numWrap"><div id="bigNum">10</div></div>
+    <div class="numLabel" id="numLabel">день</div>
+    <div class="dots" id="dots"></div>
+    <div class="hint" id="hint">Тапай по экрану ❄️</div>
+
+    <div class="greet" id="greet">
+      <h1 id="g1">Это твой день!</h1>
+      <h2 id="g2">Твой день рождения!!!</h2>
+      <div class="age" id="age"><b>23</b><span>уровня<br>пройдено 🎿</span></div>
+      <button class="btn" id="toStats">Смотреть итоги →</button>
+    </div>
+  </section>
+
+  <!-- 2. ИТОГИ -->
+  <section class="screen scroll" id="s2">
+    <div class="head">
+      <span class="pill">Итоги · сезон 2003–2026</span>
+      <h2>Маша, ты прошла<br><em>23 уровня</em></h2>
+      <p>Твоя статистика за всё время</p>
+    </div>
+
+    <div class="player">
+      <div class="lvlUp" id="lvlUp">LEVEL UP!</div>
+      <div class="pRow">
+        <div class="avatar"><img src="img/t/masha.jpg" alt=""><i>⛷️</i></div>
+        <div>
+          <div class="pName" id="pName">Маша</div>
+          <div class="pClass">Класс: Лыжница · Подкласс: Сноубордистка<br>Стихия: Зима · Статус: замужем 💍<br>Языки: русский, 한국어</div>
+        </div>
+      </div>
+      <div class="lvl"><span>УР. 23</span><span id="xpTxt">XP 0%</span><span>УР. 24</span></div>
+      <div class="bar"><i id="xpBar"></i></div>
+    </div>
+
+    <div class="secT">Статистика</div>
+    <div class="grid" id="stats"></div>
+
+    <div class="secT">Журнал квестов</div>
+    <div id="quests"></div>
+
+    <div class="secT">Карта приключений</div>
+    <div class="mapCard" id="mapCard">
+      <div class="mapTop"><div><b id="mapCount">0</b><span>мест в коллекции</span></div><div><b id="mapKm">0</b><span>км от Москвы до самой дальней</span></div></div>
+      <svg id="map" viewBox="0 0 360 170"></svg>
+      <div class="legend"><span><i class="lg-me"></i>Москва</span><span><i class="lg-pt"></i>была</span><span><i class="lg-we"></i>вместе</span><span><i class="lg-fav"></i>любимое</span><span><i class="lg-love"></i>судьба</span></div>
+    </div>
+    <div id="trips"></div>
+
+    <div class="secT">Фотоальбом · 2023 → 2026</div>
+    <div class="album" id="album"></div>
+    <div class="albumHint">листай →  ·  тапни, чтобы открыть</div>
+
+    <div class="secT">Навыки</div>
+    <div id="skills"></div>
+
+    <div class="secT">Достижения</div>
+    <div id="achs"></div>
+
+    <div class="center"><button class="btn" id="toPred">Получить предсказание 🔮</button></div>
+  </section>
+
+  <!-- 3. ПРЕДСКАЗАНИЕ -->
+  <section class="screen scroll" id="s3">
+    <span class="pill">Предсказание</span>
+    <h2 style="font:900 28px/1.1 Unbounded,sans-serif;margin-top:14px">Твой 24-й год</h2>
+    <p style="opacity:.7;margin-top:8px;font-size:14px">Тапни по снежному шару</p>
+
+    <div class="globeWrap" id="globeWrap">
+      <div class="globe" id="globe">
+        <svg viewBox="0 0 200 90" preserveAspectRatio="none">
+          <path d="M0 70 L40 30 L65 50 L100 10 L135 55 L160 35 L200 65 V90 H0Z" fill="#1d5e45"/>
+          <path d="M100 10 L88 26 L96 23 L102 30 L108 22 L114 26Z M40 30 L32 40 L38 38 L43 42 L48 37Z" fill="#fff"/>
+          <path d="M0 80 L50 62 L100 78 L150 60 L200 76 V90 H0Z" fill="#e8f6ff"/>
+        </svg>
+      </div>
+      <div class="base">МАША · 24</div>
+    </div>
+    <div class="count" id="count">0 / 0</div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="final" id="final">
+      <h3>С днём рождения,<br><em id="fName">Маша</em>! 💙💚</h3>
+      <div class="polar"><img src="img/t/hk-peak.jpg" alt="" data-lb="hk-peak"><span>Мы · пик Виктория · 2026</span></div>
+      <div class="ko">생일 축하해, 마샤! 🎂</div>
+      <p id="fText"></p>
+      <div class="sign" id="fSign"></div>
+      <button class="btn ghost" id="replay">↺ Сначала</button>
+    </div>
+  </section>
+
+  <div class="lb" id="lb"><img id="lbImg" alt=""><div class="lbCap" id="lbCap"></div><div class="lbX">✕</div></div>
+  <canvas id="fx"></canvas>
+</div>
+
+<script>
+/* ============ НАСТРОЙКИ — меняй тексты здесь ============ */
+const CFG = {
+  name: 'Маша',
+  birth: new Date(2003, 9, 10),      // 10.10.2003 (месяцы с 0)
+  age: 23,
+  tapsPerStage: 5,
+  finalText: 'Пусть 24-й год будет как идеальный день на Чегете: свежий снег, синее небо, дух захватывает — и рядом самые родные люди. Счастья тебе — полной чашей!',
+  sign: 'С любовью ❤️',
+  // Квесты: done — выполнен, prog — в процессе (p — прогресс %), next — следующий, love — особый
+  quests: [
+    ['🎓', 'Бакалавриат', 'РТУ МИРЭА — диплом получен', 'done', 'Пройден'],
+    ['🧪', 'Магистратура', 'Сколково · 2-й курс — финальный босс уже близко', 'prog', 'В процессе', 60],
+    ['💍', 'Квест «Свадьба»', 'Начат 3 года назад на Командорах, выполнен в 2026 — с Никитой', 'love', 'Выполнен ❤️', 0, 'nikita'],
+    ['🌍', 'Аспирантура за границей', 'Новая локация открывается в следующем сезоне', 'next', 'Скоро'],
+  ],
+  // Поездки: [эмодзи, место, подпись, широта, долгота, тег, фото]  тег: we — вместе, fav — любимое, love — особое
+  trips: [
+    ['🏔', 'Чегет и Эльбрус', 'Твои любимые горы. Здесь твой дом', 43.3, 42.5, 'fav'],
+    ['🇭🇰', 'Гонконг', '2026 — пик Виктория, Ocean Park и огни небоскрёбов', 22.3, 114.17, 'we', 'hk-peak'],
+    ['🚄', 'Шанхай', '11 часов на поезде из Гонконга — и мы это сделали', 31.23, 121.47, 'we', 'shanghai'],
+    ['🏮', 'Пекин', 'Ночной перелёт из Шанхая — и гуляли до утра. А ты здесь уже не впервые', 39.9, 116.4, 'we', 'beijing'],
+    ['🏜', 'Пустыня на юге России', '2026 — от снега к барханам', null, null, ''],
+    ['🇰🇷', 'Корея', 'Несколько раз — и ты говоришь по-корейски', 37.57, 126.98, ''],
+    ['🌊', 'Байкал', 'Самое глубокое озеро планеты', 53.5, 107.9, 'we'],
+    ['⛵️', 'Регата в Белом море', 'Паруса, ветер, Соловки и полярный день', 65.05, 36.6, 'we', 'whitesea-boat'],
+    ['⛰', 'Фишт', '2025 — через Кавказский заповедник пешком до Сочи', 43.97, 39.92, 'we', 'fisht'],
+    ['🗻', 'Сахалин', 'Остров на краю карты', 46.96, 142.73, 'we'],
+    ['⚓️', 'Владивосток', 'Город у Тихого океана', 43.12, 131.89, 'we'],
+    ['🚗', 'Казань', 'Зимой на машине — ≈ 800 км дороги, песни и перекусы', 55.79, 49.12, 'we'],
+    ['🌉', 'Питер', 'Разводные мосты и белые ночи', 59.94, 30.31, 'we'],
+    ['🦭', 'Командорские острова', 'Край земли, где ты встретила Никиту', 55.2, 166.0, 'love'],
+    ['🌲', 'Ергаки', 'Саянская сказка', 52.8, 93.3, ''],
+    ['🏰', 'Калининград', 'Самая западная точка страны', 54.71, 20.51, ''],
+    ['🇪🇺', 'Европа', 'Горнолыжные склоны Альп и не только', null, null, ''],
+  ],
+  // Фотоальбом по хронологии: [файл, подпись, дата, (кадрирование превью)]
+  album: [
+    ['mirea-friends', 'МИРЭА, всё только начинается', 'май 2023'],
+    ['mirea-2023-05', 'Студенческие будни', 'май 2023'],
+    ['mirea-mascot', 'Новые друзья в МИРЭА', 'октябрь 2023'],
+    ['winter-2023', 'Первый снег', 'октябрь 2023'],
+    ['mirea-2023-12', 'Почти Новый год', 'декабрь 2023'],
+    ['ski', 'Сезон открыт 🎿', 'январь 2024', 'right center'],
+    ['anime', 'Немного аниме', 'февраль 2024'],
+    ['mirea-lecture', 'Лекции, которые мы пережили', 'март 2024'],
+    ['mirea-2024-03', 'Селфи в рамке', 'март 2024'],
+    ['mirea-2024-09', 'Последний курс бакалавриата', 'сентябрь 2024'],
+    ['fisht', 'Фишт: через горы к морю', 'июнь 2025'],
+    ['whitesea-start', 'Москва → Белое море, стартуем!', 'июль 2025'],
+    ['arkhangelsk', 'Где-то под Архангельском', 'июль 2025'],
+    ['whitesea-boat', 'Регата на Белом море', 'июль 2025'],
+    ['solovki', 'Соловки', 'июль 2025'],
+    ['snowman', 'Снеговик с характером ☃️', 'зима'],
+    ['may-2026', 'Тёплый вечер', 'май 2026'],
+    ['bike', 'Велопрогулка на закате', 'лето'],
+    ['airport', 'Паспорта в руках — погнали!', 'в путь ✈️'],
+    ['hk-arrival', 'Гонконг: только прилетели', 'июль 2026'],
+    ['hk-peak', 'Пик Виктория ночью', 'июль 2026'],
+    ['hk-oceanpark', 'Ocean Park', 'июль 2026'],
+    ['hk-oceanpark-2', 'Ещё немного Ocean Park', 'июль 2026'],
+    ['hk-kowloon', 'Коулун-парк', 'июль 2026'],
+    ['shanghai', 'Шанхай после 11 часов в поезде', 'июль 2026'],
+    ['flight', 'Ночной рейс Шанхай → Пекин', 'июль 2026'],
+    ['beijing', 'Запретный город', 'июль 2026'],
+    ['apartment', 'Помогаешь мне выбрать квартиру 🏠', 'лучшая подруга'],
+    ['masha', 'Просто ты 😎', '2026'],
+    ['nikita', 'Ты и Никита 💍', 'сентябрь 2026'],
+    ['sept-2026', 'Осень 2026', 'сентябрь 2026'],
+  ],
+  skills: [
+    ['🎿 Лыжи', 97],
+    ['🏂 Сноуборд', 78],
+    ['🇰🇷 Корейский язык', 90],
+    ['🏔 Любовь к горам', 100],
+    ['🫶 Поддержка друзей', 100],
+  ],
+  achievements: [
+    ['🫶', 'Самая классная подруга', 'Поддерживаешь всегда и во всём. Бонус +100 к счастью окружающих', 'Мифик'],
+    ['💍', 'Судьба на краю земли', 'Ты нашла своего человека на Командорских островах', 'Легенда'],
+    ['🎿', 'Королева Чегета', 'Лыжи > сноуборд. Эльбрус подтверждает', 'Легенда'],
+    ['🚗', 'Дальнобойщица', 'Москва → Казань зимой на машине', 'Редкое'],
+    ['🗺', 'От Калининграда до Командор', 'Прошла всю страну с запада на восток — и дальше', 'Эпик'],
+    ['🚄', '11 часов в поезде', 'Гонконг → Шанхай. Выносливость: максимальная', 'Эпик'],
+    ['🏮', 'Ночной Пекин', 'Ночной рейс, а потом гуляли до рассвета — сон для слабаков', 'Редкое'],
+    ['⛰', 'Через горы к морю', 'Мимо Фишта, через Кавказский заповедник — пешком до Сочи', 'Эпик'],
+    ['🇰🇷', '한국어 разблокирован', 'Свободно переключаешься на корейский', 'Эпик'],
+    ['🏜', 'Снег и песок', 'В 2026 ты сменила склоны на барханы — и обратно', 'Редкое'],
+    ['🎓', 'Учёный в процессе', 'МИРЭА → Сколково → весь мир', 'Редкое'],
+  ],
+  predictions: [
+    ['🎓', 'Письмо мечты', 'То самое приглашение в аспирантуру за границей'],
+    ['🥂', 'Счастья — полная чаша', 'Дом, полный тепла, смеха и любви'],
+    ['💍', 'Первый год вместе', 'Нежный, весёлый и очень ваш, с Никитой'],
+    ['🎓', 'Магистерский диплом', 'Защита на отлично и громкие аплодисменты'],
+    ['🏔', 'Чегет зовёт', 'Пухляк по колено и солнце над Эльбрусом'],
+    ['🇯🇵', 'Япония', 'Сакура, онсэны и легендарный японский пухляк'],
+    ['🇦🇺', 'Австралия', 'Кенгуру, океан и лето посреди зимы'],
+    ['⛵️', 'Общие приключения', 'Новые путешествия вместе — как Байкал, Белое море и ночной Пекин'],
+    ['💪', 'Здоровье', 'Крепкое, как февральский наст'],
+  ],
+};
+
+/* ============ утилиты ============ */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const fmt = n => Math.round(n).toLocaleString('ru-RU');
+
+// Хаптик: Android — vibrate; iOS 18+ — трюк с нативным switch (даёт тактильный отклик в Safari)
+const hLabel = (() => {
+  const i = document.createElement('input');
+  i.type = 'checkbox'; i.setAttribute('switch', ''); i.id = 'hpt';
+  i.style.cssText = 'position:fixed;left:-200px;opacity:0;pointer-events:none';
+  const l = document.createElement('label'); l.htmlFor = 'hpt';
+  l.style.cssText = 'position:fixed;left:-200px;opacity:0';
+  document.body.append(i, l); return l;
+})();
+function haptic(pattern = 12) {
+  try { if (navigator.vibrate && navigator.vibrate(pattern)) return; } catch (e) {}
+  try { hLabel.click(); } catch (e) {}
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  app.classList.toggle('scrolled', id !== 's1');
+}
+
+/* ============ снег на фоне ============ */
+const snow = $('#snow'), sctx = snow.getContext('2d');
+let W, H, DPR = Math.min(devicePixelRatio || 1, 3);
+const flakes = [];
+function resize() {
+  W = app.clientWidth; H = app.clientHeight;
+  for (const c of [snow, fx]) { c.width = W * DPR; c.height = H * DPR; }
+  sctx.setTransform(DPR, 0, 0, DPR, 0, 0); fctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+for (let i = 0; i < 80; i++) flakes.push({ x: Math.random(), y: Math.random(), r: Math.random() * 2.2 + .6, s: Math.random() * .4 + .2, p: Math.random() * 6 });
+let wind = 0;
+function snowLoop(t) {
+  sctx.clearRect(0, 0, W, H);
+  wind *= .96;
+  for (const f of flakes) {
+    f.y += f.s * (1 + f.r * .3) / H * 1.4;
+    f.x += (Math.sin(t / 1500 + f.p) * .25 + wind) / W;
+    if (f.y > 1.02) { f.y = -.02; f.x = Math.random(); }
+    if (f.x > 1.02) f.x = -.02; if (f.x < -.02) f.x = 1.02;
+    sctx.globalAlpha = .35 + f.r / 4;
+    sctx.beginPath(); sctx.arc(f.x * W, f.y * H, f.r, 0, 7); sctx.fillStyle = '#fff'; sctx.fill();
+  }
+  sctx.globalAlpha = 1;
+  requestAnimationFrame(snowLoop);
+}
+
+/* ============ эффекты: конфетти, серпантин, снежные искры ============ */
+const fx = $('#fx'), fctx = fx.getContext('2d');
+const COLORS = ['#9fd3ff', '#7fe0b5', '#ffd479', '#ffffff', '#3e7bd6', '#2fae7c', '#ff8fb1'];
+let parts = [], running = false;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+function sparks(x, y, n = 14) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = rnd(1.5, 5);
+    parts.push({ k: 's', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1, r: rnd(1.5, 3.5) });
+  }
+  run();
+}
+function confetti(x, y, n, spread = Math.PI * 2, dir = -Math.PI / 2, pow = [4, 12]) {
+  for (let i = 0; i < n; i++) {
+    const a = dir + rnd(-spread / 2, spread / 2), v = rnd(...pow);
+    parts.push({ k: 'c', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, rot: rnd(0, 6), vr: rnd(-.3, .3),
+      w: rnd(6, 11), h: rnd(4, 7), tilt: rnd(0, 6), vt: rnd(.08, .25), c: pick(COLORS), life: 1 });
+  }
+  run();
+}
+function streamers(x, y, n, dir) {
+  for (let i = 0; i < n; i++) {
+    const a = dir + rnd(-.35, .35), v = rnd(13, 20);
+    parts.push({ k: 'r', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c: pick(COLORS), ph: rnd(0, 6), f: rnd(.18, .32),
+      amp: rnd(5, 10), trail: [], w: rnd(3, 5), t: 0, life: 1 });
+  }
+  run();
+}
+function bigBurst() {
+  streamers(0, H, 9, -Math.PI / 3.2);
+  streamers(W, H, 9, -Math.PI + Math.PI / 3.2);
+  confetti(0, H * .85, 70, .7, -Math.PI / 3, [10, 19]);
+  confetti(W, H * .85, 70, .7, -Math.PI + Math.PI / 3, [10, 19]);
+  setTimeout(() => { for (let i = 0; i < 5; i++) confetti(rnd(0, W), -10, 22, 1.2, Math.PI / 2, [1, 3]); }, 500);
+}
+function run() { if (!running) { running = true; requestAnimationFrame(fxLoop); } }
+function fxLoop() {
+  fctx.clearRect(0, 0, W, H);
+  parts = parts.filter(p => p.life > 0 && p.y < H + 120);
+  for (const p of parts) {
+    if (p.k === 's') {
+      p.x += p.vx; p.y += p.vy; p.vx *= .92; p.vy = p.vy * .92 + .08; p.life -= .03;
+      fctx.globalAlpha = p.life; fctx.fillStyle = '#fff';
+      fctx.beginPath(); fctx.arc(p.x, p.y, p.r, 0, 7); fctx.fill();
+    } else if (p.k === 'c') {
+      p.vx *= .985; p.vy = Math.min(p.vy * .985 + .18, 3.2); p.x += p.vx + Math.sin(p.tilt) * .6; p.y += p.vy;
+      p.rot += p.vr; p.tilt += p.vt; if (p.y > H) p.life = 0;
+      fctx.globalAlpha = 1; fctx.save(); fctx.translate(p.x, p.y); fctx.rotate(p.rot); fctx.scale(1, Math.cos(p.tilt));
+      fctx.fillStyle = p.c; fctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); fctx.restore();
+    } else {
+      // серпантин: летит дугой, извивается и опадает
+      p.t++; p.vx *= .975; p.vy = Math.min(p.vy * .975 + .22, 2.6);
+      const sp = Math.hypot(p.vx, p.vy) || 1, nx = -p.vy / sp, ny = p.vx / sp, wob = Math.sin(p.t * p.f + p.ph) * p.amp;
+      p.x += p.vx; p.y += p.vy;
+      p.trail.push([p.x + nx * wob, p.y + ny * wob]);
+      if (p.trail.length > 46) p.trail.shift();
+      fctx.globalAlpha = 1; fctx.strokeStyle = p.c; fctx.lineWidth = p.w; fctx.lineCap = fctx.lineJoin = 'round';
+      fctx.beginPath(); p.trail.forEach(([x, y], i) => i ? fctx.lineTo(x, y) : fctx.moveTo(x, y)); fctx.stroke();
+      if (p.t > 420) p.life = 0;
+    }
+  }
+  fctx.globalAlpha = 1;
+  if (parts.length) requestAnimationFrame(fxLoop); else { running = false; fctx.clearRect(0, 0, W, H); }
+}
+
+/* ============ 1. ТАП-ЭКРАН ============ */
+const stages = [['10', 'день'], ['10', 'месяц'], ['2003', 'год']];
+let stage = 0, taps = 0, locked = false;
+const bigNum = $('#bigNum'), numLabel = $('#numLabel'), dateRow = $('#dateRow'), dots = $('#dots');
+
+function renderDots() {
+  dots.innerHTML = '';
+  for (let i = 0; i < CFG.tapsPerStage; i++) { const d = document.createElement('i'); if (i < taps) d.className = 'on'; dots.append(d); }
+}
+function setStage() {
+  const [txt, lbl] = stages[stage];
+  bigNum.className = txt.length > 2 ? 'long' : '';
+  bigNum.textContent = txt; numLabel.textContent = lbl;
+  bigNum.style.transform = 'scale(.12)'; bigNum.style.opacity = 1;
+  renderDots();
+}
+$('#s1').addEventListener('pointerdown', e => {
+  if (locked || stage >= stages.length) return;
+  const r = app.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  const rp = document.createElement('div'); rp.className = 'ripple'; rp.style.left = x + 'px'; rp.style.top = y + 'px';
+  app.append(rp); setTimeout(() => rp.remove(), 650);
+  sparks(x, y); wind += (x / W - .5) * 2;
+  haptic(10);
+  $('#hint').style.display = 'none';
+
+  taps++; renderDots();
+  const k = taps / CFG.tapsPerStage;
+  bigNum.style.transform = `scale(${.12 + .88 * k}) rotate(${(Math.random() - .5) * 8 * (1 - k)}deg)`;
+  if (taps >= CFG.tapsPerStage) completeStage();
+});
+function completeStage() {
+  locked = true; haptic([20, 40, 30]);
+  setTimeout(() => {
+    bigNum.classList.add('pop');
+    const r = bigNum.getBoundingClientRect(), ar = app.getBoundingClientRect();
+    confetti(r.left - ar.left + r.width / 2, r.top - ar.top + r.height / 2, 40, Math.PI * 2, 0, [3, 9]);
+    if (stage > 0) { const d = document.createElement('span'); d.className = 'dot'; d.textContent = '.'; dateRow.append(d); requestAnimationFrame(() => d.classList.add('in')); }
+    const s = document.createElement('span'); s.textContent = stages[stage][0]; dateRow.append(s);
+    requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('in')));
+    stage++; taps = 0;
+    setTimeout(() => {
+      bigNum.classList.remove('pop');
+      if (stage < stages.length) { setStage(); locked = false; }
+      else finale();
+    }, 550);
+  }, 380);
+}
+function splitChars(el) {
+  const words = el.textContent.split(' ');
+  el.innerHTML = '';
+  let i = 0;
+  words.forEach((w, wi) => {
+    const ws = document.createElement('span'); ws.style.whiteSpace = 'nowrap'; ws.style.display = 'inline-block';
+    for (const c of w) { const s = document.createElement('span'); s.className = 'ch'; s.textContent = c; s.style.animationDelay = (i++ * 0.045) + 's'; ws.append(s); }
+    el.append(ws); if (wi < words.length - 1) el.append(' ');
+  });
+  return i;
+}
+function finale() {
+  bigNum.style.opacity = 0; numLabel.style.opacity = 0; dots.style.opacity = 0;
+  dateRow.classList.add('center');
+  haptic([30, 60, 30, 60, 80]);
+  setTimeout(() => {
+    bigBurst(); haptic(60);
+    dateRow.classList.remove('center'); dateRow.classList.add('up');
+    const n1 = splitChars($('#g1'));
+    const n2 = splitChars($('#g2'));
+    $('#g2').querySelectorAll('.ch').forEach((s, i) => s.style.animationDelay = (0.5 + n1 * 0.045 + i * 0.04) + 's');
+    $('#greet').classList.add('show');
+    const tAfter = (0.5 + n1 * 0.045 + n2 * 0.04) * 1000 + 300;
+    setTimeout(() => { $('#age').classList.add('in'); haptic(25); confetti(W / 2, H * .62, 50, Math.PI * 2, 0, [3, 10]); }, tAfter);
+    setTimeout(() => $('#toStats').classList.add('in'), tAfter + 700);
+  }, 1200);
+}
+
+/* ============ 2. ИТОГИ ============ */
+function buildStats() {
+  const now = Date.now(), ms = now - CFG.birth.getTime();
+  const min = ms / 6e4, days = ms / 864e5, years = days / 365.2425;
+  const stats = [
+    { ic: '📅', v: days, l: 'дней на этой планете', wide: true, accent: true },
+    { ic: '💍', txt: '2026', l: 'год, когда ты сказала «да» Никите', wide: true, love: true },
+    { ic: '⏳', v: ms / 36e5, l: 'часов приключений' },
+    { ic: '❤️', v: min * 75, l: '≈ ударов сердца', short: true },
+    { ic: '❄️', v: CFG.age, l: 'зим за плечами — и каждая любимая' },
+    { ic: '🌍', txt: '≈ ' + (years * 0.94).toFixed(1).replace('.', ',') + ' млрд', l: 'км ты пролетела вокруг Солнца' },
+    { ic: '😴', txt: '≈ ' + (years / 3).toFixed(1).replace('.', ',') + ' года', l: 'ты проспала (и правильно)' },
+    { ic: '🌬', v: min * 15, l: '≈ вдохов горного воздуха', short: true },
+  ];
+  const box = $('#stats'); box.innerHTML = '';
+  stats.forEach(s => {
+    const t = document.createElement('div');
+    t.className = 'tile' + (s.wide ? ' wide' : '') + (s.accent ? ' accent' : '') + (s.love ? ' loveT' : '');
+    t.innerHTML = `<div class="ic">${s.ic}</div><div class="v">${s.txt || '0'}</div><div class="l">${s.l}</div>`;
+    t._s = s; box.append(t);
+  });
+  $('#quests').innerHTML = CFG.quests.map(([i, t, d, k, st, pr, ph]) =>
+    `<div class="quest ${k}"${pr ? ` data-p="${pr}"` : ''}><div class="qi">${i}</div><div class="qt"><span>${t}</span><span class="qs">${st}</span></div><div class="qd">${d}</div>${pr ? '<div class="bar"><i></i></div>' : ''}${ph ? `<img class="qph" src="img/t/${ph}.jpg" data-lb="${ph}" loading="lazy" alt="">` : ''}</div>`).join('');
+  $('#album').innerHTML = CFG.album.map(([f, c, d, pos], i) =>
+    `<div class="pol" style="--r:${[-2, 1.5, -1, 2][i % 4]}deg"><img src="img/t/${f}.jpg" data-lb="${f}" loading="lazy" alt=""${pos ? ` style="object-position:${pos}"` : ''}><b>${c}</b><span>${d}</span></div>`).join('');
+  buildMap();
+  $('#skills').innerHTML = CFG.skills.map(([n, p]) =>
+    `<div class="skill" data-p="${p}"><div class="t"><span>${n}</span><b>${p}%</b></div><div class="bar"><i></i></div></div>`).join('');
+  $('#achs').innerHTML = CFG.achievements.map(([i, t, d, r]) =>
+    `<div class="ach"><div class="ai">${i}</div><div><div class="at">${t}</div><div class="ad">${d}</div></div><div class="rar">${r}</div></div>`).join('');
+}
+/* карта поездок: простая равнопромежуточная проекция */
+const MOSCOW = [55.75, 37.62];
+const proj = (lat, lon) => [8 + (lon - 15) / 157 * 344, 8 + (70 - lat) / 52 * 154];
+const LABELS = { // смещение подписи: [dx, dy, выравнивание, короткое имя]
+  'Чегет и Эльбрус': [7, 3, 'start', 'Чегет · Эльбрус'], 'Корея': [7, 4, 'start'], 'Байкал': [0, -8, 'middle'],
+  'Регата в Белом море': [7, 3, 'start', 'Белое море'], 'Ергаки': [0, 13, 'middle'], 'Командорские острова': [0, -8, 'end', 'Командоры'],
+  'Сахалин': [7, 3, 'start'], 'Владивосток': [7, 3, 'start'], 'Гонконг': [7, 3, 'start'], 'Шанхай': [7, 3, 'start'],
+  'Пекин': [-7, 3, 'end'], 'Фишт': [-7, 3, 'end'], 'Питер': [-6, 3, 'end'], 'Казань': [6, 3, 'start'], 'Калининград': [2, 13, 'middle'],
+};
+const NUDGE = { 'Командорские острова': [0, -14] }; // визуальный сдвиг точки на карте [dx, dy]
+function km([a, b], [c, d]) {
+  const R = 6371, r = Math.PI / 180, dl = (c - a) * r, dn = (d - b) * r;
+  const h = Math.sin(dl / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dn / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function buildMap() {
+  const col = { we: '#ffd479', love: '#ff8fb1', fav: '#7fe0b5', '': '#9fd3ff' };
+  const [mx, my] = proj(...MOSCOW);
+  let g = '';
+  for (let lat = 40; lat <= 65; lat += 12.5) { const y = proj(lat, 0)[1]; g += `<line x1="0" x2="360" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)" stroke-dasharray="2 4"/>`; }
+  let arcs = '', pts = '', far = 0, n = 0;
+  CFG.trips.forEach(([e, name, , lat, lon, tag]) => {
+    n++;
+    if (lat == null) return;
+    far = Math.max(far, km(MOSCOW, [lat, lon]));
+    const [nx, ny] = NUDGE[name] || [0, 0], [px, py] = proj(lat, lon), x = px + nx, y = py + ny, c = col[tag] || col[''];
+    const cx = (mx + x) / 2, cy = Math.min(my, y) - 18 - Math.abs(x - mx) * .12;
+    arcs += `<path class="arc" d="M${mx} ${my} Q${cx} ${cy} ${x} ${y}" stroke="${c}" opacity=".75"/>`;
+    const [dx, dy, an, lbl] = LABELS[name] || [7, 3, 'start'];
+    pts += `<g class="pt"><circle cx="${x}" cy="${y}" r="6" fill="${c}" opacity=".25"/><circle cx="${x}" cy="${y}" r="3" fill="${c}"/></g>` +
+      `<text class="pt" x="${x + dx}" y="${y + dy}" text-anchor="${an}">${lbl || name}</text>`;
+  });
+  pts += `<g class="pt"><circle cx="${mx}" cy="${my}" r="7" fill="#fff" opacity=".25"/><circle cx="${mx}" cy="${my}" r="3.5" fill="#fff"/></g><text class="pt" x="${mx}" y="${my - 8}" text-anchor="middle">Москва</text>`;
+  // поезд Гонконг → Шанхай
+  const [hx, hy] = proj(22.3, 114.17), [sx, sy] = proj(31.23, 121.47);
+  arcs += `<path class="pt" fill="none" stroke-width="1.6" d="M${hx} ${hy} Q${hx + 22} ${(hy + sy) / 2} ${sx} ${sy}" stroke="#ffd479" stroke-dasharray="3 3"/>` +
+    `<text class="pt" x="${hx + 22}" y="${(hy + sy) / 2 + 6}">🚄 11 ч</text>`;
+  // перелёт Шанхай → Пекин
+  const [bx, by] = proj(39.9, 116.4);
+  arcs += `<path class="pt" fill="none" stroke-width="1.6" d="M${sx} ${sy} Q${bx - 22} ${(sy + by) / 2 + 4} ${bx} ${by}" stroke="#ffd479" stroke-dasharray="2.5 2.5" stroke-width="1.8"/>` +
+    `<text class="pt" x="${bx - 14}" y="${(sy + by) / 2 + 6}" text-anchor="end" font-size="10">✈️</text>`;
+  $('#map').innerHTML = g + arcs + pts;
+  $('#map').querySelectorAll('.arc').forEach(a => { const L = a.getTotalLength(); a.style.strokeDasharray = L; a.style.strokeDashoffset = L; });
+  $('#mapCard')._map = { n, far };
+  $('#trips').innerHTML = CFG.trips.map(([e, name, d, , , tag, ph]) => {
+    const t = { we: 'Вместе 💙', fav: 'Любимое', love: 'Судьба' }[tag];
+    return `<div class="trip">${ph ? `<img class="ph" src="img/t/${ph}.jpg" data-lb="${ph}" loading="lazy" alt="">` : `<div class="te">${e}</div>`}<div><b>${name}</b><span>${d}</span></div>${t ? `<div class="tag ${tag}">${t}</div>` : ''}</div>`;
+  }).join('');
+}
+function playMap(card) {
+  const m = $('#map'); m.classList.add('go');
+  m.querySelectorAll('.pt').forEach((p, i) => p.style.transitionDelay = (0.3 + i * 0.06) + 's');
+  m.querySelectorAll('.arc').forEach((a, i) => setTimeout(() => { a.style.strokeDashoffset = 0; haptic(6); }, 200 + i * 180));
+  countUp($('#mapCount'), card._map.n, {});
+  countUp($('#mapKm'), card._map.far, {});
+}
+function short(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2).replace('.', ',') + ' млрд';
+  if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',') + ' млн';
+  return fmt(n);
+}
+function countUp(el, to, s) {
+  const t0 = performance.now(), D = 1600;
+  const step = t => {
+    const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 4), v = to * e;
+    el.textContent = s.short ? short(v) : fmt(v);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+let io;
+function observeStats() {
+  io = new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    const el = en.target; io.unobserve(el); el.classList.add('vis');
+    if (el._s && !el._s.txt) countUp(el.querySelector('.v'), el._s.v, el._s);
+    if (el.classList.contains('skill')) setTimeout(() => el.querySelector('i').style.width = el.dataset.p + '%', 150);
+    if (el.classList.contains('ach')) haptic(8);
+    if (el.dataset.p && el.classList.contains('quest')) setTimeout(() => el.querySelector('.bar i').style.width = el.dataset.p + '%', 300);
+    if (el.id === 'mapCard') playMap(el);
+  }), { root: $('#s2'), threshold: .25 });
+  document.querySelectorAll('#s2 .tile, #s2 .skill, #s2 .ach, #s2 .quest, #s2 .trip, #mapCard').forEach((el, i) => { el.style.transitionDelay = (i % 2) * 80 + 'ms'; io.observe(el); });
+  setTimeout(() => {
+    $('#xpBar').style.width = '100%';
+    const t0 = performance.now();
+    const tick = t => { const k = Math.min(1, (t - t0) / 2200); $('#xpTxt').textContent = 'XP ' + Math.round(100 * (1 - Math.pow(1 - k, 3))) + '%'; if (k < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    setTimeout(() => { $('#lvlUp').classList.add('in'); haptic([20, 30, 40]); const r = $('#lvlUp').getBoundingClientRect(), a = app.getBoundingClientRect(); confetti(r.left - a.left + 30, r.top - a.top + 10, 35, Math.PI * 2, 0, [2, 7]); }, 2300);
+  }, 600);
+}
+
+$('#toStats').addEventListener('click', () => { haptic(15); show('s2'); $('#s2').scrollTop = 0; observeStats(); });
+
+/* ============ 3. ПРЕДСКАЗАНИЕ ============ */
+let pi = 0, busy = false;
+function initGlobe() {
+  const g = $('#globe');
+  for (let i = 0; i < 26; i++) {
+    const s = document.createElement('i'); s.className = 'gs';
+    s.style.left = rnd(5, 95) + '%'; s.style.top = '0';
+    s.style.animationDuration = rnd(3, 7) + 's'; s.style.animationDelay = -rnd(0, 7) + 's';
+    const sz = rnd(2, 5); s.style.width = s.style.height = sz + 'px';
+    g.append(s);
+  }
+  $('#count').textContent = `0 / ${CFG.predictions.length}`;
+}
+$('#globeWrap').addEventListener('click', () => {
+  if (busy || pi >= CFG.predictions.length) return;
+  busy = true; haptic([15, 30, 15]);
+  const w = $('#globeWrap'), g = $('#globe');
+  w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake'); g.classList.add('shake');
+  setTimeout(() => {
+    const [e, t, d] = CFG.predictions[pi++];
+    const c = document.createElement('div'); c.className = 'pc';
+    c.innerHTML = `<div class="e">${e}</div><div><b>${t}</b><span>${d}</span></div>`;
+    $('#cards').prepend(c);
+    $('#count').textContent = `${pi} / ${CFG.predictions.length}`;
+    const r = w.getBoundingClientRect(), a = app.getBoundingClientRect();
+    sparks(r.left - a.left + r.width / 2, r.top - a.top + 90, 18);
+    haptic(10);
+    g.classList.remove('shake'); busy = false;
+    if (pi >= CFG.predictions.length) setTimeout(() => {
+      $('#final').classList.add('show'); bigBurst(); haptic([30, 50, 30, 50, 90]);
+      setTimeout(() => $('#final').scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+    }, 700);
+  }, 600);
+});
+$('#toPred').addEventListener('click', () => { haptic(15); show('s3'); $('#s3').scrollTop = 0; });
+$('#replay').addEventListener('click', () => location.reload());
+
+/* ============ просмотр фото ============ */
+const lbList = () => CFG.album.map(a => a[0]);
+let lbCur = null;
+function openLb(f) {
+  lbCur = f;
+  const a = CFG.album.find(x => x[0] === f);
+  $('#lbImg').src = `img/${f}.jpg`;
+  $('#lbCap').textContent = a ? `${a[1]} · ${a[2]}` : '';
+  $('#lb').classList.add('on'); haptic(8);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-lb]');
+  if (el) { e.stopPropagation(); openLb(el.dataset.lb); }
+});
+$('#lb').addEventListener('click', e => {
+  const L = lbList(), i = L.indexOf(lbCur), x = e.clientX / innerWidth;
+  if (e.target.id === 'lbImg' && i >= 0 && (x < .3 || x > .7)) return openLb(L[(i + (x > .7 ? 1 : -1) + L.length) % L.length]);
+  $('#lb').classList.remove('on');
+});
+
+/* ============ старт ============ */
+$('#pName').textContent = CFG.name; $('#fName').textContent = CFG.name;
+$('#fText').textContent = CFG.finalText; $('#fSign').textContent = CFG.sign;
+addEventListener('resize', resize); resize();
+requestAnimationFrame(snowLoop);
+setStage(); buildStats(); initGlobe();
+</script>
+</body>
+</html>
